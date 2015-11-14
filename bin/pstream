@@ -1,0 +1,98 @@
+#!/usr/bin/env ruby
+
+require "optparse"
+require "pstream"
+require "string"
+
+class PStreamExit
+    GOOD = 0
+    INVALID_OPTION = 1
+    INVALID_ARGUMENT = 2
+    MISSING_ARGUMENT = 3
+    EXTRA_ARGUMENTS = 4
+    EXCEPTION = 5
+end
+
+def parse(args)
+    options = Hash.new
+    options["ciphers"] = false
+    options["prot"] = "tcp"
+    options["stream"] = nil
+
+    info = "Analyze pcap files. Can view tcp/udp streams or " \
+        "ciphersuites in use."
+
+    parser = OptionParser.new do |opts|
+        opts.banner = "Usage: #{File.basename($0)} [OPTIONS] <pcap>"
+
+        opts.on(
+            "-c",
+            "--ciphersuites",
+            "Show ciphersuite negotiation from ssl handshakes"
+        ) do
+            options["ciphers"] = true
+        end
+
+        opts.on("-h", "--help", "Display this help message") do
+            puts opts
+            exit PStreamExit::GOOD
+        end
+
+        opts.on("-s", "--stream=NUM", "Show specified stream") do |s|
+            options["stream"] = s.to_i
+        end
+
+        opts.on("-u", "--udp", "Use UDP") do
+            options["prot"] = "udp"
+        end
+
+        opts.on("", info.word_wrap(80))
+    end
+
+    begin
+        parser.parse!
+    rescue OptionParser::InvalidOption => e
+        puts e.message
+        puts parser
+        exit PStreamExit::INVALID_OPTION
+    rescue OptionParser::InvalidArgument => e
+        puts e.message
+        puts parser
+        exit PStreamExit::INVALID_ARGUMENT
+    rescue OptionParser::MissingArgument => e
+        puts e.message
+        puts parser
+        exit PStreamExit::MISSING_ARGUMENT
+    end
+
+    if (args.length != 1)
+        puts parser
+        exit PStreamExit::EXTRA_ARGUMENTS
+    end
+
+    options["pcap"] = args[0]
+    return options
+end
+
+options = parse(ARGV)
+
+begin
+    pstream = PStream.new(options["pcap"])
+
+    if (options["stream"])
+        case options["prot"]
+        when "tcp"
+            puts pstream.tcp_streams[options["stream"]].contents
+        when "udp"
+            puts pstream.udp_streams[options["stream"]].contents
+        end
+    elsif (options["ciphers"])
+        puts pstream.ciphers
+    else
+        puts pstream.summary
+    end
+rescue PStream::Error => e
+    puts e.message
+    exit PStreamExit::EXCEPTION
+end
+exit PStreamExit::GOOD

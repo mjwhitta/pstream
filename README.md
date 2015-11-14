@@ -25,7 +25,7 @@ Analyze pcap files. Can view tcp/udp streams or ciphersuites in use.
 
 ## Links
 
-- [Homepage](http://mjwhitta.github.io/pstream)
+- [Homepage](https://mjwhitta.github.io/pstream)
 - [Source](https://gitlab.com/mjwhitta/pstream)
 - [Mirror](https://github.com/mjwhitta/pstream)
 - [RubyGems](https://rubygems.org/gems/pstream)

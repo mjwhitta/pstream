@@ -1,10 +1,11 @@
 Gem::Specification.new do |s|
     s.name = "pstream"
-    s.version = "0.1.3"
+    s.version = "0.1.4"
     s.date = Time.new.strftime("%Y-%m-%d")
-    s.summary = "Summarize or extract info from pcap files."
+    s.summary = "Summarize or extract info from pcap files"
     s.description =
-        "The ruby gem will summarize or extract info from pcap files."
+        "This ruby gem will summarize or extract info from pcap " \
+        "files."
     s.authors = [ "Miles Whittaker" ]
     s.email = "mjwhitta@gmail.com"
     s.executables = Dir.chdir("bin") do

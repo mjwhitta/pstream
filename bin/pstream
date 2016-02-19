@@ -46,7 +46,7 @@ def parse(args)
             options["prot"] = "udp"
         end
 
-        opts.on("", info.word_wrap(80))
+        opts.on("", info.word_wrap)
     end
 
     begin

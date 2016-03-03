@@ -1,7 +1,7 @@
 class PStream::Stream
-    attr_accessor :desc
-    attr_accessor :frames
-    attr_accessor :id
+    attr_reader :desc
+    attr_reader :frames
+    attr_reader :id
 
     def contents
         out = %x(
@@ -19,7 +19,7 @@ class PStream::Stream
         @prot = prot
     end
 
-    def to_s()
+    def to_s
         return contents
     end
 end

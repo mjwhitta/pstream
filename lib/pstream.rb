@@ -2,24 +2,56 @@ require "pathname"
 require "scoobydoo"
 
 class PStream
-    attr_accessor :tcp_streams
-    attr_accessor :udp_streams
+    attr_reader :tcp_streams
+    attr_reader :udp_streams
 
     def ciphers
         # List ciphers during ssl handshake
         out = %x(
-            tshark -r #{@pcap} -Y ssl.handshake.ciphersuite -V | \
-                 \grep -E "Internet Protocol|Hostname:|Cipher Suite"
+            tshark -r #{@pcap} -Y ssl.handshake.ciphersuite -V 2>&1 \
+                | \grep -E "Internet Protocol|Hostname:|Cipher Suite"
         )
         return out
     end
 
+    def get_stream(stream, prot = "tcp")
+        case prot
+        when "tcp"
+            if (@tcp_streams.empty? && !@udp_streams.empty?)
+                return get_stream(stream, "udp")
+            end
+            if (stream >= @tcp_streams.length)
+                raise PStream::Error::StreamNotFound.new(stream, prot)
+            else
+                return @tcp_streams[stream]
+            end
+        when "udp"
+            if (@udp_streams.empty? && !@tcp_streams.empty?)
+                return get_stream(stream, "udp")
+            end
+            if (stream >= @udp_streams.length)
+                raise PStream::Error::StreamNotFound.new(stream, prot)
+            else
+                return @udp_streams[stream]
+            end
+        else
+            raise PStream::Error::ProtocolNotSupported.new(prot)
+        end
+    end
+
     def get_streams(prot)
+        case prot
+        when "tcp", "udp"
+            # Do nothing
+        else
+            raise PStream::Error::ProtocolNotSupported.new(prot)
+        end
+
         streams = Array.new
 
         out = %x(
-            tshark -r #{@pcap} -z conv,#{prot} | \grep -E "<->" | \
-                awk '{print $1, $2, $3, "|", $8, "Frames"}'
+            tshark -r #{@pcap} -z conv,#{prot} 2>&1 | \grep -E "<->" \
+                | awk '{print $1, $2, $3, "|", $8, "Frames"}'
         )
 
         count = 0
@@ -54,6 +86,16 @@ class PStream
         @udp_streams = get_streams("udp")
     end
 
+    def negotiated_ciphers
+        f = "ssl.handshake.ciphersuite && ssl.handshake.type == 2"
+        out = %x(
+            tshark -r #{@pcap} -Y "#{f}" -V 2>&1 | \
+                \grep -E "Cipher Suite:" | \
+                sed -r "s|^ +Cipher Suite: ||g" | sort -u
+        )
+        return out.split("\n")
+    end
+
     def summary
         ret = Array.new
 
@@ -77,16 +119,11 @@ class PStream
 
         # List ciphers that were actually selected
         ret.push("Ciphers in use:")
-        f = "ssl.handshake.ciphersuite && ssl.handshake.type == 2"
-        out = %x(
-            tshark -r #{@pcap} -Y "#{f}" -V | \
-                \grep -E "Cipher Suite:" | \
-                sed -r "s|^ +Cipher Suite: ||g" | sort -u
-        )
-        ret.concat(out.split("\n"))
+        ret.concat(negotiated_ciphers)
 
         return ret.join("\n")
     end
+    private :summary
 
     def to_s
         return summary

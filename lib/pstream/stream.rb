@@ -4,8 +4,17 @@ class PStream::Stream
     attr_reader :id
 
     def contents
+        case @prot
+        when /^tcp$/i
+            id=@id
+        when /^udp$/i
+            id=@desc.gsub(" <-> ", ",")
+        else
+            raise PStream::Error::ProtocolNotSupported.new(@prot)
+        end
+
         out = %x(
-            tshark -r #{@pcap} -z follow,#{@prot},hex,#{@id} | \
+            tshark -r #{@pcap} -z follow,#{@prot},hex,#{id} | \
                  sed "s|^	||" | \grep -E "^[0-9A-Fa-f]{8}"
         )
         return out

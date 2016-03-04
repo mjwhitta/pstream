@@ -2,8 +2,7 @@ require "pathname"
 require "scoobydoo"
 
 class PStream
-    attr_reader :tcp_streams
-    attr_reader :udp_streams
+    attr_reader :streams
 
     def ciphers
         # List ciphers during ssl handshake
@@ -16,24 +15,28 @@ class PStream
 
     def get_stream(stream, prot = "tcp")
         case prot
-        when "tcp"
-            if (@tcp_streams.empty? && !@udp_streams.empty?)
+        when /^tcp$/i
+            if (@streams["tcp"].empty? && !@streams["udp"].empty?)
                 return get_stream(stream, "udp")
             end
-            if (stream >= @tcp_streams.length)
+            if (stream >= @streams["tcp"].length)
+                if (stream < @streams["udp"].length)
+                    return @streams["udp"][stream]
+                end
                 raise PStream::Error::StreamNotFound.new(stream, prot)
-            else
-                return @tcp_streams[stream]
             end
-        when "udp"
-            if (@udp_streams.empty? && !@tcp_streams.empty?)
-                return get_stream(stream, "udp")
+            return @streams["tcp"][stream]
+        when /^udp$/i
+            if (@streams["udp"].empty? && !@streams["tcp"].empty?)
+                return get_stream(stream, "tcp")
             end
-            if (stream >= @udp_streams.length)
+            if (stream >= @streams["udp"].length)
+                if (stream < @streams["tcp"].length)
+                    return @streams["tcp"][stream]
+                end
                 raise PStream::Error::StreamNotFound.new(stream, prot)
-            else
-                return @udp_streams[stream]
             end
+            return @streams["udp"][stream]
         else
             raise PStream::Error::ProtocolNotSupported.new(prot)
         end
@@ -41,7 +44,7 @@ class PStream
 
     def get_streams(prot)
         case prot
-        when "tcp", "udp"
+        when /^tcp$/i, /^udp$/i
             # Do nothing
         else
             raise PStream::Error::ProtocolNotSupported.new(prot)
@@ -57,11 +60,7 @@ class PStream
         count = 0
         out.split("\n").each do |line|
             desc, frames = line.split(" | ")
-
-            id = count
-            id = desc.gsub(" <-> ", ",") if (prot == "udp")
-
-            streams.push(Stream.new(@pcap, prot, id, desc, frames))
+            streams.push(Stream.new(@pcap, prot, count, desc, frames))
             count += 1
         end
 
@@ -82,8 +81,10 @@ class PStream
             raise PStream::Error::PcapNotReadable.new(@pcap)
         end
 
-        @tcp_streams = get_streams("tcp")
-        @udp_streams = get_streams("udp")
+        @streams = Hash.new
+        ["tcp", "udp"].each do |prot|
+            @streams[prot] = get_streams(prot)
+        end
     end
 
     def negotiated_ciphers
@@ -99,23 +100,14 @@ class PStream
     def summary
         ret = Array.new
 
-        # List TCP streams
-        ret.push("TCP Streams:")
-        count = 0
-        @tcp_streams.each do |stream|
-            ret.push("#{count} | #{stream.desc} | #{stream.frames}")
-            count += 1
+        # List streams
+        ["tcp", "udp"].each do |prot|
+            ret.push("#{prot} streams:")
+            @streams[prot].each do |s|
+                ret.push("#{s.id} | #{s.desc} | #{s.frames}")
+            end
+            ret.push("")
         end
-        ret.push("")
-
-        # List UDP streams
-        ret.push("UDP Streams:")
-        count = 0
-        @udp_streams.each do |stream|
-            ret.push("#{count} | #{stream.desc} | #{stream.frames}")
-            count += 1
-        end
-        ret.push("")
 
         # List ciphers that were actually selected
         ret.push("Ciphers in use:")

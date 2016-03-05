@@ -92,51 +92,23 @@ end
 options = parse(ARGV)
 
 begin
-    pstream = PStream.new(options["pcap"])
+    pstream = PStream.new(
+        options["pcap"],
+        !String.disable_colorization
+    )
 
     if (options["stream"])
-        pstream.get_stream(
+        puts pstream.get_stream(
             options["stream"].to_i,
             options["prot"]
-        ).contents.split("\n").each do |line|
-            m = line.match(/([0-9A-Fa-f]{8}) (.*) (.{17})/)
-            puts [
-                m[1].light_blue,
-                m[2].light_green,
-                m[3].white
-            ].join(" ")
-        end
+        ).to_s
     elsif (options["ciphers"])
-        puts pstream.ciphers
-    else
-        pstream.to_s.split("\n").each do |line|
-            case line
-            when /.*:$/
-                # Headers
-                puts line.white
-            when /<->/
-                # Streams
-                m = line.match(/([0-9]+) \| (.+) \| ([0-9]+ Frames)/)
-                puts [
-                    m[1].light_blue,
-                    m[2].light_green,
-                    m[3].light_white
-                ].join(" | ")
-            else
-                case line
-                when /Unknown/
-                    puts line.light_yellow
-                when /NULL|MD5|RC4|anon/
-                    # Bad cipher suites
-                    puts line.light_red
-                when /E?(EC)?DHE?|AES_256/
-                    # Great cipher suites
-                    puts line.light_green
-                else
-                    puts line.white
-                end
-            end
+        pstream.cipher_negotiations.each do |negotiation|
+            puts negotiation.to_s
         end
+    else
+        # Summarize
+        puts pstream.to_s
     end
 rescue PStream::Error => e
     $stderr.puts e.message.red

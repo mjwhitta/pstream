@@ -4,13 +4,115 @@ require "scoobydoo"
 class PStream
     attr_reader :streams
 
-    def ciphers
+    def cipher_negotiations
+        negotiations = Hash.new
+
         # List ciphers during ssl handshake
         out = %x(
             tshark -r #{@pcap} -Y ssl.handshake.ciphersuite -V 2>&1 \
-                | \grep -E "Internet Protocol|Hostname:|Cipher Suite"
+                | \grep -E "(Handshake|Internet) Prot|Cipher Suite"
         )
-        return out
+
+        negotiation = nil
+        hello = nil
+        out.split("\n").each do |line|
+            case line.gsub(/^ +/, "")
+            when /^Cipher Suite:/
+                m = line.match(/Cipher Suite: ([^ ]+) (.*)$/)
+                case hello
+                when "Client"
+                    case m[1]
+                    when "Unknown"
+                        negotiation.suites.push("#{m[1]} #{m[2]}")
+                    else
+                        negotiation.suites.push(m[1])
+                    end
+                when "Server"
+                    id = "#{negotiation.dst} <-> #{negotiation.src}"
+                    # Ignore partial handshakes that are server side
+                    # only
+                    if (negotiations[id])
+                        case m[1]
+                        when "Unknown"
+                            negotiations[id].suite = "#{m[1]} #{m[2]}"
+                        else
+                            negotiations[id].suite = m[1]
+                        end
+                    end
+                    negotiation = nil
+                end
+            when /^Cipher Suites Length:/
+                m = line.match(/Cipher Suites Length: ([0-9]+)$/)
+                negotiation.length = m[1].to_i
+            when /^Handshake Protocol:/
+                m = line.match(/Handshake Protocol: ([^ ]+) Hello$/)
+                hello = m[1]
+            when /^Internet Protocol Version/
+                if (negotiation)
+                    id = "#{negotiation.src} <-> #{negotiation.dst}"
+                    negotiations[id] = negotiation
+                end
+
+                m = line.gsub("Internet Protocol Version", "").match(
+                    /(4|6), Src: ([^,]+), Dst: (.*)$/
+                )
+
+                ipv = m[1]
+                src = m[2]
+                dst = m[3]
+
+                negotiation = PStream::CipherNegotiation.new(
+                    self,
+                    ipv,
+                    src,
+                    dst,
+                    @colorize
+                )
+            end
+        end
+
+        # Keep parital handshakes that are client side only
+        if (negotiation)
+            id = "#{negotiation.src} <-> #{negotiation.dst}"
+            negotiations[id] = negotiation
+        end
+
+        return negotiations.values
+    end
+
+    def colorize_cipher_suite(suite)
+        return suite if (!@colorize)
+
+        case suite
+        when /Unknown/
+            # Unknown
+            return suite.light_yellow
+        when /NULL|MD5|RC4|anon/
+            # Bad cipher suites
+            return suite.light_red
+        when /E?(EC)?DHE?|AES_256/
+            # Great cipher suites
+            return  suite.light_green
+        else
+            # Maybe OK
+            return  suite.light_white
+        end
+    end
+
+    def colorize_header(header)
+        return header if (!@colorize)
+        return header.light_cyan
+    end
+
+    def colorize_stream(stream)
+        if (!@colorize)
+            return "#{stream.id} | #{stream.desc} | #{stream.frames}"
+        end
+        return [
+            "#{stream.id}".light_blue,
+            stream.desc.light_green,
+            stream.frames.light_white
+        ].join(" | ")
     end
 
     def get_stream(stream, prot = "tcp")
@@ -60,7 +162,16 @@ class PStream
         count = 0
         out.split("\n").each do |line|
             desc, frames = line.split(" | ")
-            streams.push(Stream.new(@pcap, prot, count, desc, frames))
+            streams.push(
+                Stream.new(
+                    @pcap,
+                    prot,
+                    count,
+                    desc,
+                    frames,
+                    @colorize
+                )
+            )
             count += 1
         end
 
@@ -68,7 +179,9 @@ class PStream
     end
     private :get_streams
 
-    def initialize(pcap)
+    def initialize(pcap, colorize = false)
+        @colorize = colorize
+
         if (ScoobyDoo.where_are_you("tshark").nil?)
             raise PStream::Error::TsharkNotFound.new
         end
@@ -87,31 +200,23 @@ class PStream
         end
     end
 
-    def negotiated_ciphers
-        f = "ssl.handshake.ciphersuite && ssl.handshake.type == 2"
-        out = %x(
-            tshark -r #{@pcap} -Y "#{f}" -V 2>&1 | \
-                \grep -E "Cipher Suite:" | \
-                sed -r "s|^ +Cipher Suite: ||g" | sort -u
-        )
-        return out.split("\n")
-    end
-
     def summary
         ret = Array.new
 
         # List streams
         ["tcp", "udp"].each do |prot|
-            ret.push("#{prot} streams:")
-            @streams[prot].each do |s|
-                ret.push("#{s.id} | #{s.desc} | #{s.frames}")
+            ret.push(colorize_header("#{prot} streams:"))
+            @streams[prot].each do |stream|
+                ret.push(colorize_stream(stream))
             end
             ret.push("")
         end
 
         # List ciphers that were actually selected
-        ret.push("Ciphers in use:")
-        ret.concat(negotiated_ciphers)
+        ret.push(colorize_header("Ciphers in use:"))
+        cipher_negotiations.each do |negotiation|
+            ret.push(colorize_cipher_suite(negotiation.suite))
+        end
 
         return ret.join("\n")
     end
@@ -122,5 +227,6 @@ class PStream
     end
 end
 
+require "pstream/cipher_negotiation"
 require "pstream/error"
 require "pstream/stream"

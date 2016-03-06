@@ -6,16 +6,14 @@ class PStream
 
     def cipher_negotiations
         negotiations = Hash.new
-
-        # List ciphers during ssl handshake
-        out = %x(
-            tshark -r #{@pcap} -Y ssl.handshake.ciphersuite -V 2>&1 \
-                | \grep -E "(Handshake|Internet) Prot|Cipher Suite"
-        )
-
         negotiation = nil
         hello = nil
-        out.split("\n").each do |line|
+
+        # List ciphers during ssl handshake
+        %x(
+            tshark -r #{@pcap} -Y ssl.handshake.ciphersuite -V 2>&1 \
+                | \grep -E "(Handshake|Internet) Prot|Cipher Suite"
+        ).split("\n").each do |line|
             case line.gsub(/^ +/, "")
             when /^Cipher Suite:/
                 m = line.match(/Cipher Suite: ([^ ]+) (.*)$/)
@@ -154,13 +152,11 @@ class PStream
 
         streams = Array.new
 
-        out = %x(
+        count = 0
+        %x(
             tshark -r #{@pcap} -z conv,#{prot} 2>&1 | \grep -E "<->" \
                 | awk '{print $1, $2, $3, "|", $8, "Frames"}'
-        )
-
-        count = 0
-        out.split("\n").each do |line|
+        ).split("\n").each do |line|
             desc, frames = line.split(" | ")
             streams.push(
                 Stream.new(
@@ -205,7 +201,7 @@ class PStream
 
         # List streams
         ["tcp", "udp"].each do |prot|
-            ret.push(colorize_header("#{prot} streams:"))
+            ret.push(colorize_header("#{prot.upcase} streams:"))
             @streams[prot].each do |stream|
                 ret.push(colorize_stream(stream))
             end
@@ -214,8 +210,10 @@ class PStream
 
         # List ciphers that were actually selected
         ret.push(colorize_header("Ciphers in use:"))
-        cipher_negotiations.each do |negotiation|
-            ret.push(colorize_cipher_suite(negotiation.suite))
+        cipher_negotiations.map do |negotiation|
+            negotiation.suite
+        end.uniq.each do |suite|
+            ret.push(colorize_cipher_suite(suite))
         end
 
         return ret.join("\n")

@@ -19,8 +19,6 @@ Usage: pstream [OPTIONS] <pcap>
     -h, --help          Display this help message
     -s, --stream=NUM    Show specified stream
     -u, --udp           Use UDP
-
-Analyze pcap files. Can view tcp/udp streams or ciphersuites in use.
 ```
 
 ## Links
@@ -33,7 +31,6 @@ Analyze pcap files. Can view tcp/udp streams or ciphersuites in use.
 ## TODO
 
 - More features
-    - Note if ciphersuites in use are weak/broken/non-PFS
     - Extract credentials from http traffic
         - GET/POST params
         - Basic auth headers

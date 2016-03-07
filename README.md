@@ -17,8 +17,10 @@ $ pstream --help
 Usage: pstream [OPTIONS] <pcap>
     -c, --ciphersuites  Show ciphersuite negotiation from ssl handshakes
     -h, --help          Display this help message
+        --nocolor       Disable colorized output
     -s, --stream=NUM    Show specified stream
     -u, --udp           Use UDP
+    -v, --verbose       Show backtrace when error occurs
 ```
 
 ## Links

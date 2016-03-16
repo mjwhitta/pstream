@@ -63,8 +63,7 @@ class PStream
                     self,
                     ipv,
                     src,
-                    dst,
-                    @colorize
+                    dst
                 )
             end
         end
@@ -78,8 +77,13 @@ class PStream
         return negotiations.values
     end
 
+    def self.colorize?
+        @@colorize ||= false
+        return @@colorize
+    end
+
     def colorize_cipher_suite(suite)
-        return suite if (!@colorize)
+        return suite if (!@@colorize)
 
         case suite
         when /Unknown/
@@ -98,12 +102,12 @@ class PStream
     end
 
     def colorize_header(header)
-        return header if (!@colorize)
+        return header if (!@@colorize)
         return header.light_cyan
     end
 
     def colorize_stream(stream)
-        if (!@colorize)
+        if (!@@colorize)
             return "#{stream.id} | #{stream.desc} | #{stream.frames}"
         end
         return [
@@ -159,14 +163,7 @@ class PStream
         ).split("\n").each do |line|
             desc, frames = line.split(" | ")
             streams.push(
-                Stream.new(
-                    @pcap,
-                    prot,
-                    count,
-                    desc,
-                    frames,
-                    @colorize
-                )
+                Stream.new(@pcap, prot, count, desc, frames)
             )
             count += 1
         end
@@ -176,12 +173,11 @@ class PStream
     private :get_streams
 
     def initialize(pcap, colorize = false)
-        @colorize = colorize
-
         if (ScoobyDoo.where_are_you("tshark").nil?)
             raise PStream::Error::TsharkNotFound.new
         end
 
+        @@colorize = colorize
         @pcap = Pathname.new(pcap).expand_path
 
         if (!@pcap.exist?)

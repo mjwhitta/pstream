@@ -4,17 +4,17 @@ class PStream::Stream
     attr_reader :id
 
     def colorize_address(address)
-        return address if (!@colorize)
+        return address if (!PStream.colorize?)
         return address.light_blue
     end
 
     def colorize_ascii(ascii)
-        return ascii if (!@colorize)
+        return ascii if (!PStream.colorize?)
         return ascii.light_white
     end
 
     def colorize_hex(hex)
-        return hex if (!@colorize)
+        return hex if (!PStream.colorize?)
         return hex.light_green
     end
 
@@ -46,8 +46,7 @@ class PStream::Stream
         return ret.join("\n")
     end
 
-    def initialize(pcap, prot, id, desc, frames, colorize = false)
-        @colorize = colorize
+    def initialize(pcap, prot, id, desc, frames)
         @desc = desc
         @frames = frames
         @id = id

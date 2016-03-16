@@ -9,12 +9,12 @@ class PStream::CipherNegotiation
     attr_reader :src
 
     def colorize_hosts(src, dst)
-        return "#{src} <-> #{dst}" if (!@colorize)
+        return "#{src} <-> #{dst}" if (!PStream.colorize?)
         return "#{src} <-> #{dst}".light_cyan
     end
 
     def colorize_ipv(ipv)
-        return "IPv#{ipv}" if (!@colorize)
+        return "IPv#{ipv}" if (!PStream.colorize?)
         return "IPv#{ipv}".light_cyan
     end
 
@@ -26,8 +26,7 @@ class PStream::CipherNegotiation
         ].join(" ")
     end
 
-    def initialize(pstream, ipv, src, dst, colorize)
-        @colorize = colorize
+    def initialize(pstream, ipv, src, dst)
         @dst = dst
         @ipv = ipv
         @length = nil

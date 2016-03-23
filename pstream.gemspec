@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
     s.name = "pstream"
-    s.version = "0.2.1"
+    s.version = "0.2.2"
     s.date = Time.new.strftime("%Y-%m-%d")
     s.summary = "Summarize or extract info from pcap files"
     s.description =

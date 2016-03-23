@@ -126,6 +126,7 @@ rescue Errno::EPIPE
     # less. Usually if less is closed before PStream is done with
     # STDOUT.
 rescue Exception => e
+    $stderr.puts
     $stderr.puts "Oops! Looks like an error has occured! If the " \
         "error persists, file a bug at:"
     $stderr.puts

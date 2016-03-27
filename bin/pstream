@@ -4,7 +4,6 @@ require "colorize"
 require "io/wait"
 require "optparse"
 require "pstream"
-require "string"
 
 class PStreamExit
     GOOD = 0
@@ -27,7 +26,17 @@ def parse(args)
         "ciphersuites in use."
 
     parser = OptionParser.new do |opts|
+        opts.summary_width = 19
+
         opts.banner = "Usage: #{File.basename($0)} [OPTIONS] <pcap>"
+
+        opts.on("", "DESCRIPTION")
+
+        info.scan(/\S.{0,#{76}}\S(?=\s|$)|\S+/).each do |line|
+            opts.on("    #{line}")
+        end
+
+        opts.on("", "OPTIONS")
 
         opts.on(
             "-c",
@@ -61,8 +70,6 @@ def parse(args)
         ) do
             options["verbose"] = true
         end
-
-        opts.on("", info.word_wrap)
     end
 
     begin
@@ -138,7 +145,8 @@ rescue Exception => e
     $stderr.puts "    https://gitlab.com/mjwhitta/pstream/issues"
     $stderr.puts
     $stderr.puts "Maybe the message below will help. If not, you " \
-        "can use the --verbose flag to get a backtrace.".word_wrap
+        "can use the --verbose flag to get"
+    $stderr.puts "a backtrace."
 
     $stderr.puts e.message.red
     if (options["verbose"])

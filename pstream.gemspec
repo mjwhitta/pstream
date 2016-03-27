@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
     s.name = "pstream"
-    s.version = "0.2.3"
+    s.version = "0.2.4"
     s.date = Time.new.strftime("%Y-%m-%d")
     s.summary = "Summarize or extract info from pcap files"
     s.description =
@@ -16,5 +16,5 @@ Gem::Specification.new do |s|
     s.license = "GPL-3.0"
     s.add_development_dependency("rake", "~> 10.5", ">= 10.5.0")
     s.add_runtime_dependency("colorize", "~> 0.7", ">= 0.7.7")
-    s.add_runtime_dependency("scoobydoo", "~> 0.1", ">= 0.1.3")
+    s.add_runtime_dependency("scoobydoo", "~> 0.1", ">= 0.1.4")
 end

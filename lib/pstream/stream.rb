@@ -1,22 +1,9 @@
+require "hilighter"
+
 class PStream::Stream
     attr_reader :desc
     attr_reader :frames
     attr_reader :id
-
-    def colorize_address(address)
-        return address if (!PStream.colorize?)
-        return address.light_blue
-    end
-
-    def colorize_ascii(ascii)
-        return ascii if (!PStream.colorize?)
-        return ascii.light_white
-    end
-
-    def colorize_hex(hex)
-        return hex if (!PStream.colorize?)
-        return hex.light_green
-    end
 
     def contents
         case @prot
@@ -36,15 +23,33 @@ class PStream::Stream
             m = line.match(/([0-9A-Fa-f]{8}) (.*) (.{17})/)
             ret.push(
                 [
-                    colorize_address(m[1]),
-                    colorize_hex(m[2]),
-                    colorize_ascii(m[3])
+                    hilight_address(m[1]),
+                    hilight_hex(m[2]),
+                    hilight_ascii(m[3])
                 ].join(" ")
             )
         end
 
         return ret.join("\n")
     end
+
+    def hilight_address(address)
+        return address if (!PStream.hilight?)
+        return address.light_blue
+    end
+    private :hilight_address
+
+    def hilight_ascii(ascii)
+        return ascii if (!PStream.hilight?)
+        return ascii.light_white
+    end
+    private :hilight_ascii
+
+    def hilight_hex(hex)
+        return hex if (!PStream.hilight?)
+        return hex.light_green
+    end
+    private :hilight_hex
 
     def initialize(pcap, prot, id, desc, frames)
         @desc = desc

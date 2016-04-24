@@ -1,3 +1,4 @@
+require "hilighter"
 require "pathname"
 require "scoobydoo"
 
@@ -77,46 +78,6 @@ class PStream
         return negotiations.values
     end
 
-    def self.colorize?
-        @@colorize ||= false
-        return @@colorize
-    end
-
-    def colorize_cipher_suite(suite)
-        return suite if (!@@colorize)
-
-        case suite
-        when /Unknown/
-            # Unknown
-            return suite.light_yellow
-        when /NULL|MD5|RC4|anon/
-            # Bad cipher suites
-            return suite.light_red
-        when /E?(EC)?DHE?|AES_256/
-            # Great cipher suites
-            return  suite.light_green
-        else
-            # Maybe OK
-            return  suite.light_white
-        end
-    end
-
-    def colorize_header(header)
-        return header if (!@@colorize)
-        return header.light_cyan
-    end
-
-    def colorize_stream(stream)
-        if (!@@colorize)
-            return "#{stream.id} | #{stream.desc} | #{stream.frames}"
-        end
-        return [
-            "#{stream.id}".light_blue,
-            stream.desc.light_green,
-            stream.frames.light_white
-        ].join(" | ")
-    end
-
     def get_stream(stream, prot = "tcp")
         case prot
         when /^tcp$/i
@@ -172,12 +133,54 @@ class PStream
     end
     private :get_streams
 
-    def initialize(pcap, colorize = false)
+    def self.hilight?
+        @@hilight ||= false
+        return @@hilight
+    end
+
+    def hilight_cipher_suite(suite)
+        return suite if (!@@hilight)
+
+        case suite
+        when /Unknown/
+            # Unknown
+            return suite.light_yellow
+        when /NULL|MD5|RC4|anon/
+            # Bad cipher suites
+            return suite.light_red
+        when /E?(EC)?DHE?|AES_256/
+            # Great cipher suites
+            return  suite.light_green
+        else
+            # Maybe OK
+            return  suite.light_white
+        end
+    end
+
+    def hilight_header(header)
+        return header if (!@@hilight)
+        return header.light_cyan
+    end
+    private :hilight_header
+
+    def hilight_stream(stream)
+        if (!@@hilight)
+            return "#{stream.id} | #{stream.desc} | #{stream.frames}"
+        end
+        return [
+            "#{stream.id}".light_blue,
+            stream.desc.light_green,
+            stream.frames.light_white
+        ].join(" | ")
+    end
+    private :hilight_stream
+
+    def initialize(pcap, hilight = false)
         if (ScoobyDoo.where_are_you("tshark").nil?)
             raise PStream::Error::TsharkNotFound.new
         end
 
-        @@colorize = colorize
+        @@hilight = hilight
         @pcap = Pathname.new(pcap).expand_path
 
         if (!@pcap.exist?)
@@ -197,19 +200,19 @@ class PStream
 
         # List streams
         ["tcp", "udp"].each do |prot|
-            ret.push(colorize_header("#{prot.upcase} streams:"))
+            ret.push(hilight_header("#{prot.upcase} streams:"))
             @streams[prot].each do |stream|
-                ret.push(colorize_stream(stream))
+                ret.push(hilight_stream(stream))
             end
             ret.push("")
         end
 
         # List ciphers that were actually selected
-        ret.push(colorize_header("Ciphers in use:"))
+        ret.push(hilight_header("Ciphers in use:"))
         cipher_negotiations.map do |negotiation|
             negotiation.suite
         end.uniq.each do |suite|
-            ret.push(colorize_cipher_suite(suite))
+            ret.push(hilight_cipher_suite(suite))
         end
 
         return ret.join("\n")

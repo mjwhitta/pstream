@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 
-require "colorize"
+require "hilighter"
 require "io/wait"
 require "optparse"
 require "pstream"
@@ -52,7 +52,7 @@ def parse(args)
         end
 
         opts.on("--nocolor", "Disable colorized output") do
-            String.disable_colorization = true
+            Hilighter.disable
         end
 
         opts.on("-s", "--stream=NUM", "Show specified stream") do |s|
@@ -104,10 +104,7 @@ end
 options = parse(ARGV)
 
 begin
-    pstream = PStream.new(
-        options["pcap"],
-        !String.disable_colorization
-    )
+    pstream = PStream.new(options["pcap"], !Hilighter.disable?)
 
     if (options["stream"])
         puts pstream.get_stream(

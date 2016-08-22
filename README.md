@@ -36,5 +36,6 @@ Usage: pstream [OPTIONS] <pcap>
     - Extract credentials from http traffic
         - GET/POST params
         - Basic auth headers
+    - Can I extract certificates and keys
 - Better README
 - RDoc

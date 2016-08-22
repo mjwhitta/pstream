@@ -43,9 +43,13 @@ class PStream
             when /^Cipher Suites Length:/
                 m = line.match(/Cipher Suites Length: ([0-9]+)$/)
                 negotiation.length = m[1].to_i
-            when /^Handshake Protocol:/
+            when /^Handshake Protocol: [^ ]+ Hello$/
                 m = line.match(/Handshake Protocol: ([^ ]+) Hello$/)
                 hello = m[1]
+            when /^Handshake Protocol: Certificate$/
+                # TODO extract cert info
+            when /^Handshake Protocol: Server Key Exchange$/
+                # TODO extract key info
             when /^Internet Protocol Version/
                 if (negotiation)
                     id = "#{negotiation.src} <-> #{negotiation.dst}"

@@ -6,7 +6,7 @@ The ruby gem will summarize or extract info from pcap files.
 
 ## How to install
 
-```bash
+```
 $ gem install pstream
 ```
 
@@ -25,7 +25,6 @@ Usage: pstream [OPTIONS] <pcap>
 
 ## Links
 
-- [Homepage](https://mjwhitta.github.io/pstream)
 - [Source](https://gitlab.com/mjwhitta/pstream)
 - [Mirror](https://github.com/mjwhitta/pstream)
 - [RubyGems](https://rubygems.org/gems/pstream)

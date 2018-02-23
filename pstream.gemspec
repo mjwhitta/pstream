@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
     s.name = "pstream"
-    s.version = "0.2.8"
+    s.version = "0.2.9"
     s.date = Time.new.strftime("%Y-%m-%d")
     s.summary = "Summarize or extract info from pcap files"
     s.description =
@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
     s.files = Dir["lib/**/*.rb"]
     s.homepage = "https://mjwhitta.github.io/pstream"
     s.license = "GPL-3.0"
-    s.add_development_dependency("rake", "~> 10.5", ">= 10.5.0")
-    s.add_runtime_dependency("hilighter", "~> 1.1", ">= 1.1.0")
-    s.add_runtime_dependency("scoobydoo", "~> 0.1", ">= 0.1.4")
+    s.add_development_dependency("rake", "~> 12.3", ">= 12.3.0")
+    s.add_runtime_dependency("hilighter", "~> 1.1", ">= 1.1.1")
+    s.add_runtime_dependency("scoobydoo", "~> 0.1", ">= 0.1.5")
 end

@@ -154,10 +154,10 @@ class PStream
             return suite.light_red
         when /E?(EC)?DHE?|AES_256/
             # Great cipher suites
-            return  suite.light_green
+            return suite.light_green
         else
             # Maybe OK
-            return  suite.light_white
+            return suite.light_white
         end
     end
 
@@ -216,7 +216,7 @@ class PStream
         cipher_negotiations.map do |negotiation|
             negotiation.suite
         end.uniq.each do |suite|
-            ret.push(hilight_cipher_suite(suite))
+            ret.push(hilight_cipher_suite(suite)) if (!suite.nil?)
         end
 
         return ret.join("\n")

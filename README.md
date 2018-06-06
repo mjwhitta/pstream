@@ -26,7 +26,6 @@ Usage: pstream [OPTIONS] <pcap>
 ## Links
 
 - [Source](https://gitlab.com/mjwhitta/pstream)
-- [Mirror](https://github.com/mjwhitta/pstream)
 - [RubyGems](https://rubygems.org/gems/pstream)
 
 ## TODO

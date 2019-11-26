@@ -15,9 +15,7 @@ Gem::Specification.new do |s|
     s.files = Dir["lib/**/*.rb"]
     s.homepage = "https://gitlab.com/mjwhitta/pstream"
     s.license = "GPL-3.0"
-    s.metadata = {
-        "source_code_uri" => "https://gitlab.com/mjwhitta/pstream"
-    }
+    s.metadata = {"source_code_uri" => s.homepage}
     s.name = "pstream"
     s.summary = "Summarize or extract info from pcap files"
     s.version = "0.2.15"

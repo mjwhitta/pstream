@@ -1,5 +1,7 @@
 # PStream
 
+<a href="https://www.buymeacoffee.com/mjwhitta">🍪 Buy me a cookie</a>
+
 ## What is this?
 
 The ruby gem will summarize or extract info from pcap files.
